@@ -149,7 +149,7 @@
 
         .grid3 {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(min(290px, 100%), 1fr));
             gap: 16px;
         }
         .col { background: #f6f8fb; border-radius: 10px; padding: 4px 12px 12px; }
@@ -195,7 +195,17 @@
         pre { white-space: pre-wrap; overflow-wrap: anywhere; background: #f3f4f6; padding: 10px; border-radius: 8px; }
 
         @media (max-width: 600px) {
-            .tab { padding: 9px 12px; font-size: 14px; }
+            .tab { padding: 9px 12px; font-size: 14px; min-height: 44px; }
+            /* 16px stops iPhones zooming into fields; 44px is a comfortable tap target */
+            input { font-size: 16px; }
+            button { min-height: 44px; }
+            .dc-close { min-height: 40px; }
+        }
+
+        /* touch screens at any width: bigger targets, no zoom-on-focus */
+        @media (pointer: coarse) {
+            input { font-size: 16px; }
+            button { min-height: 44px; }
         }
     </style>
 </head>
@@ -228,7 +238,7 @@
 
         <div class="url-row">
             <input type="url" id="partnerUrl"
-                   placeholder="https://partner-app.onrender.com/api/students">
+                   placeholder="https://miranda-act-9-5z4w.onrender.com/api/students">
             <button id="btnRetrieve" onclick="loadPartnerRecords()">Retrieve Partner Records</button>
             <button id="btnShare" class="secondary" onclick="shareMyApi()">Share My API URL</button>
         </div>
