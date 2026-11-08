@@ -346,12 +346,22 @@ def send_record():
     if url is None:
         return jsonify({"error": "Partner URL must be https://<app>.onrender.com/..."}), 400
 
+    rec = body.get('record') or {}
+    if not all(str(rec.get(f, '')).strip() for f in REQUIRED_FIELDS):
+        return jsonify({"error": "Fill in every field of the record."}), 400
+    try:
+        year = int(rec['year'])
+    except (TypeError, ValueError):
+        return jsonify({"error": "Year must be a number."}), 400
+    if year < 1:
+        return jsonify({"error": "Year must be 1 or more."}), 400
+
     record = {
-        "student_id": "EXT-001",
-        "name": "Sample Exchange Record",
-        "program": "BSIT",
-        "year": 1,
-        "section": "A",
+        "student_id": str(rec['student_id']).strip(),
+        "name": str(rec['name']).strip(),
+        "program": str(rec['program']).strip(),
+        "year": year,
+        "section": str(rec['section']).strip(),
         "source": "Partner API"
     }
 
