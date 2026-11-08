@@ -527,7 +527,8 @@
                 name: document.getElementById('studentName').value.trim(),
                 program: document.getElementById('studentProgram').value.trim(),
                 year: Number(document.getElementById('studentYear').value),
-                section: document.getElementById('studentSection').value.trim()
+                section: document.getElementById('studentSection').value.trim(),
+                source: 'Local'
             };
 
             const url = editingId === null ? '/api/students' : `/api/students/${editingId}`;
@@ -718,6 +719,21 @@
 
     loadMyRecords();
     refreshDashboard();
+
+    // Auto-refresh every 10 s (and when the tab is shown again) so records
+    // received from a partner appear without a manual refresh.
+    async function silentRefresh() {
+        if (document.hidden) return;
+        try {
+            const response = await fetch('/api/students');
+            if (!response.ok) return;
+            allMyRecords = await response.json();
+            searchStudents();
+            await refreshDashboard();
+        } catch (error) { /* keep the current view; retry on the next tick */ }
+    }
+    setInterval(silentRefresh, 10000);
+    document.addEventListener('visibilitychange', silentRefresh);
 </script>
 </body>
 </html>
