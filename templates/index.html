@@ -204,9 +204,12 @@
     <div class="card">
         <h2>Partner Records</h2>
         <p class="muted">
-            Records retrieved from your partner's API through this app's
-            server (<code>/partner-records</code>).
+            Enter your partner's Render API URL (leave blank to use the server default).
+            Records are retrieved through this app's server (<code>/partner-records</code>).
         </p>
+
+        <input type="url" id="partnerUrl"
+               placeholder="https://partner-app.onrender.com/api/students">
 
         <button onclick="loadPartnerRecords()">Retrieve Partner Records</button>
         <button onclick="sendPracticeRecord()">Send Practice Record to Partner</button>
@@ -540,7 +543,7 @@
 
     function line(student) {
         return `${student.name || 'N/A'} | ${student.student_id || 'N/A'} | ` +
-               `${student.program || 'N/A'} | Source: ${student.source || 'Local'}`;
+               `${student.program || 'N/A'} | Source: ${student.source || 'not provided'}`;
     }
 
     function renderList(containerId, students, buttons) {
@@ -577,7 +580,8 @@
 
         try {
             message.textContent = 'Loading partner records...';
-            const response = await fetch('/partner-records');
+            const url = document.getElementById('partnerUrl').value.trim();
+            const response = await fetch('/partner-records?url=' + encodeURIComponent(url));
             const data = await response.json();
 
             if (!response.ok) throw new Error(data.error || 'Request failed.');
@@ -631,7 +635,11 @@
         const message = document.getElementById('partnerMessage');
 
         try {
-            const response = await fetch('/send-record', {method: 'POST'});
+            const response = await fetch('/send-record', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({url: document.getElementById('partnerUrl').value.trim()})
+            });
             const result = await response.json();
 
             if (!response.ok) throw new Error(result.error || result.partner_response);

@@ -2,6 +2,7 @@
 import os
 import sqlite3
 import requests
+from urllib.parse import urlparse
 from flask import Flask, jsonify, request, render_template
 
 app = Flask(__name__)
@@ -291,11 +292,25 @@ def delete_student(id):
 REQUIRED_FIELDS = ['student_id', 'name', 'program', 'year', 'section']
 
 
+def partner_url_from(value):
+    """Return a safe partner URL, or None. Only https://*.onrender.com is allowed."""
+    url = (value or "").strip() or PARTNER_URL
+    parts = urlparse(url)
+    host = parts.hostname or ""
+    if parts.scheme != "https" or parts.username or not host.endswith(".onrender.com"):
+        return None
+    return url
+
+
 # RETRIEVE PARTNER'S RECORDS (server-side, avoids browser CORS)
 @app.route('/partner-records')
 def partner_records():
+    url = partner_url_from(request.args.get('url'))
+    if url is None:
+        return jsonify({"error": "Partner URL must be https://<app>.onrender.com/..."}), 400
+
     try:
-        response = requests.get(PARTNER_URL, timeout=15)
+        response = requests.get(url, timeout=15, allow_redirects=False)
         response.raise_for_status()
         return jsonify(response.json())
     except (requests.RequestException, ValueError):
@@ -326,7 +341,12 @@ def import_student():
 # SEND A PRACTICE RECORD TO MY PARTNER'S POST ENDPOINT
 @app.route('/send-record', methods=['POST'])
 def send_record():
-    record = request.get_json(silent=True) or {
+    body = request.get_json(silent=True) or {}
+    url = partner_url_from(body.get('url'))
+    if url is None:
+        return jsonify({"error": "Partner URL must be https://<app>.onrender.com/..."}), 400
+
+    record = {
         "student_id": "EXT-001",
         "name": "Sample Exchange Record",
         "program": "BSIT",
@@ -336,7 +356,7 @@ def send_record():
     }
 
     try:
-        response = requests.post(PARTNER_URL, json=record, timeout=15)
+        response = requests.post(url, json=record, timeout=15, allow_redirects=False)
     except requests.RequestException:
         return jsonify({"error": "Unable to reach partner API"}), 502
 
@@ -344,7 +364,7 @@ def send_record():
         "partner_status": response.status_code,
         "partner_response": response.text,
         "sent": record
-    }), response.status_code if response.status_code >= 400 else 200
+    }), (response.status_code if response.status_code >= 400 else 200)
 
 
 # ==========================================
