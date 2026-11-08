@@ -198,6 +198,7 @@
                    placeholder="https://partner-app.onrender.com/api/students">
             <button id="btnRetrieve" onclick="loadPartnerRecords()">Retrieve Partner Records</button>
             <button id="btnSend" class="secondary" onclick="sendPracticeRecord()">Send Practice Record</button>
+            <button id="btnShare" class="secondary" onclick="shareMyApi()">Share My API URL</button>
         </div>
 
         <div id="partnerHost" class="host"></div>
@@ -698,6 +699,28 @@
         });
     }
 
+
+
+    // SHARE MY API URL: system share sheet on phones, clipboard elsewhere.
+    async function shareMyApi() {
+        const url = location.origin + '/api/students';
+        const button = document.getElementById('btnShare');
+        const label = button.textContent;
+
+        try {
+            if (navigator.share && /Mobi|Android/i.test(navigator.userAgent)) {
+                await navigator.share({title: 'My Student API', url: url});
+            } else {
+                await navigator.clipboard.writeText(url);
+            }
+            button.textContent = 'Copied!';
+            setTimeout(() => { button.textContent = label; }, 2000);
+            setStatus('partnerMessage', 'Your API URL: ' + url, 'ok');
+        } catch (error) {
+            if (error.name === 'AbortError') return;   // user closed the share sheet
+            window.prompt('Copy your API URL:', url);   // clipboard blocked: copy by hand
+        }
+    }
 
     // ---------- ACTIVITY 9: INTEGRATION DASHBOARD ----------
 
